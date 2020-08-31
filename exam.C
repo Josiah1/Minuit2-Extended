@@ -8,55 +8,60 @@
 
 using namespace std;
 
-vector<double> *data=new vector<double>;
+vector<double>* data = new vector<double>;
 
-double fcn(const double *par){
+double Function::operator()(const double* par)
+{
+  double res   = 0;
+  double mu    = par[0];
+  double sigma = par[1];
 
-    double res=0;
-    double mu=par[0];
-    double sigma=par[1];
-
-    //Gausaian likelihood function
-    for(int i=0;i<data->size();i++){
-        res+=0.5*TMath::Log(1/pow(sigma,2))-pow(data->at(i)-mu,2)/2/sigma/sigma;
-    }
-    return -2*res;
+  //Gausaian likelihood function
+  for (int i = 0; i < data->size(); i++)
+  {
+    res += 0.5 * TMath::Log(1 / pow(sigma, 2)) - pow(data->at(i) - mu, 2) / 2 / sigma / sigma;
+  }
+  return -2 * res;
 }
 
 //g++ -o exam exam.C `root-config --cflags --libs` -lminuit2 -lminuit
-int main(void){
+int main(void)
+{
 
-    //Prepare data
-    TRandom3 gr(0);
-    TH1D* h=new TH1D("h","",100,-5,5);
-    for(int i=0;i<1000;i++) {
-        data->push_back(gr.Gaus(0,1));
-        h->Fill(data->back());
-    }
+  //Prepare data
+  TRandom3 gr(0);
+  TH1D* h = new TH1D("h", "", 100, -5, 5);
+  for (int i = 0; i < 1000; i++)
+  {
+    data->push_back(gr.Gaus(0, 1));
+    h->Fill(data->back());
+  }
 
-    //Usage
-    ROOT::Math::Functor Chi2Functor(&fcn, 2);
-    TMini* mini=new TMini(Chi2Functor);
+  //Usage
 
-    mini->SetVariable(0,"mu",0,1e-8);
-    mini->SetVariable(1,"sigma",1,1e-8);
+  ROOT::Math::Functor Chi2Functor(fcn, 2);
+  TMini* mini = new TMini(Chi2Functor);
 
-    mini->Minimize();
+  mini->SetVariable(0, "mu", 0, 1e-8);
+  mini->SetVariable(1, "sigma", 1, 1e-8);
 
-    const double *pars= mini->X();
-    const double *errs= mini->Errors();
+  mini->Minimize();
 
-    cout<<Form("MinValue= %.2f",mini->MinValue())<<endl;
+  const double* pars = mini->X();
+  const double* errs = mini->Errors();
 
-    //Example of parameter scan
-    unsigned int nstep=100;
-    double x[nstep];
-    double y[nstep];
-    mini->Scan(0,nstep,x,y,pars[0]-3*errs[0],pars[0]+3*errs[0] );
-    for(int i=0;i<100;i++){
-        cout<<Form("%.2f %.2f",x[i],y[i]-mini->MinValue())<<endl;
-    }
-    //mini->PrintResults();
+  cout << Form("MinValue= %.2f", mini->MinValue()) << endl;
 
-    return 0;
+  //Example of parameter scan
+  unsigned int nstep = 100;
+  double x[nstep];
+  double y[nstep];
+  mini->Scan(0, nstep, x, y, pars[0] - 3 * errs[0], pars[0] + 3 * errs[0]);
+  for (int i = 0; i < 100; i++)
+  {
+    cout << Form("%.2f %.2f", x[i], y[i] - mini->MinValue()) << endl;
+  }
+  //mini->PrintResults();
+
+  return 0;
 }

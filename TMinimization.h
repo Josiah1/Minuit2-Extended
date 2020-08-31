@@ -1,19 +1,25 @@
 #include "Minuit2/Minuit2Minimizer.h"
 #include "Math/Functor.h"
 
-class TMini:public ROOT::Minuit2::Minuit2Minimizer
+class Function
+{
+public:
+  double operator()(const double* par);
+} fcn;
+
+class TMini : public ROOT::Minuit2::Minuit2Minimizer
 {
 
 public:
-  TMini(ROOT::Math::Functor &Chi2Functor, int level=1, double tolerance=1e-8)
-      :ROOT::Minuit2::Minuit2Minimizer(ROOT::Minuit2::kMigrad)
+  TMini(ROOT::Math::Functor& Chi2Functor, int level = 1, double tolerance = 1e-8)
+      : ROOT::Minuit2::Minuit2Minimizer(ROOT::Minuit2::kMigrad)
   {
     SetPrintLevel(level);
     SetStrategy(1); // 0- cursory, 1- default, 2- thorough yet no more successful
     SetMaxFunctionCalls(500000);
     SetMaxIterations(500000);
-    SetTolerance(tolerance);  // tolerance*2e-3 = edm precision
-    SetPrecision(1e-18); // precision in the target function
+    SetTolerance(tolerance); // tolerance*2e-3 = edm precision
+    SetPrecision(1e-18);     // precision in the target function
     SetFunction(Chi2Functor);
   }
   TMini(const TMini&) {}
@@ -44,5 +50,4 @@ public:
 
     Contour(parI, parJ, Npoints, arrayI, arrayJ);
   }
-
 };
