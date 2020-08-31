@@ -35,12 +35,8 @@ int main(void){
     }
 
     //Usage
-    ROOT::Minuit2::Minuit2Minimizer *mini=new ROOT::Minuit2::Minuit2Minimizer(ROOT::Minuit2::kMigrad); 
-
     ROOT::Math::Functor Chi2Functor(&fcn, 2);
-    mini->SetFunction(Chi2Functor);
-
-    TMini* mini_TM=new TMini(mini);
+    TMini* mini=new TMini(Chi2Functor);
 
     mini->SetVariable(0,"mu",0,1e-8);
     mini->SetVariable(1,"sigma",1,1e-8);

@@ -1,23 +1,20 @@
 #include "Minuit2/Minuit2Minimizer.h"
 #include "Math/Functor.h"
 
-class TMini
+class TMini:public ROOT::Minuit2::Minuit2Minimizer
 {
 
 public:
-  TMini(ROOT::Minuit2::Minuit2Minimizer* mini_)
+  TMini(ROOT::Math::Functor &Chi2Functor, int level=1, double tolerance=1e-8)
+      :ROOT::Minuit2::Minuit2Minimizer(ROOT::Minuit2::kMigrad)
   {
-    mini = mini_;
-
-    mini->SetPrintLevel(1);
-    mini->SetStrategy(1); // 0- cursory, 1- default, 2- thorough yet no more successful
-    mini->SetMaxFunctionCalls(500000);
-    mini->SetMaxIterations(500000);
-    mini->SetTolerance(1e-8);  // tolerance*2e-3 = edm precision
-    mini->SetPrecision(1e-18); // precision in the target function
-
-    //ROOT::Math::Functor Chi2Functor(fcn, npars);
-    //mini->SetFunction(Chi2Functor);
+    SetPrintLevel(level);
+    SetStrategy(1); // 0- cursory, 1- default, 2- thorough yet no more successful
+    SetMaxFunctionCalls(500000);
+    SetMaxIterations(500000);
+    SetTolerance(tolerance);  // tolerance*2e-3 = edm precision
+    SetPrecision(1e-18); // precision in the target function
+    SetFunction(Chi2Functor);
   }
   TMini(const TMini&) {}
   ~TMini() {}
@@ -30,24 +27,22 @@ public:
     {
       case 1:
         // 68.3% confidence level
-        mini->SetErrorDef(2.2977); // 1 - 0.317 with ndf = 2
+        SetErrorDef(2.2977); // 1 - 0.317 with ndf = 2
         break;
       case 2:
         // 95.5% confidence level
-        mini->SetErrorDef(6.2021); // 1 - 0.045 with ndf = 2
+        SetErrorDef(6.2021); // 1 - 0.045 with ndf = 2
         break;
       case 3:
         // 99.7% confidence level
-        mini->SetErrorDef(11.6182); // 1 - 0.003 with ndf = 2
+        SetErrorDef(11.6182); // 1 - 0.003 with ndf = 2
         break;
       default:
         // 68.3% confidence level
-        mini->SetErrorDef(2.2977); // 1 - 0.317 with ndf = 2
+        SetErrorDef(2.2977); // 1 - 0.317 with ndf = 2
     }
 
-    mini->Contour(parI, parJ, Npoints, arrayI, arrayJ);
+    Contour(parI, parJ, Npoints, arrayI, arrayJ);
   }
 
-private:
-  ROOT::Minuit2::Minuit2Minimizer* mini;
 };
