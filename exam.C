@@ -17,7 +17,7 @@ using namespace std;
 
 vector<double>* data = new vector<double>;
 
-double Function::operator()(const double* par)
+double Fcn::operator()(const double* par)
 {
   double res   = 0;
   double mu    = par[0];
@@ -46,6 +46,7 @@ int main(void)
 
   //Usage
 
+  Fcn fcn;
   ROOT::Math::Functor Chi2Functor(fcn, 2);
   TMini* mini = new TMini(Chi2Functor);
 
