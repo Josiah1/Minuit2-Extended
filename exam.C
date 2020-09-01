@@ -31,7 +31,7 @@ double Fcn::operator()(const double* par)
   return -2 * res;
 }
 
-//g++ -o exam exam.C `root-config --cflags --libs` -lminuit2
+//g++ -o Exam Exam.C `root-config --cflags --libs` -lminuit2
 int main(void)
 {
 

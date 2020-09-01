@@ -8,6 +8,9 @@
 
 #include "Minuit2/Minuit2Minimizer.h"
 #include "Math/Functor.h"
+#include "Math/QuantFuncMathCore.h"
+#include "Math/PdfFuncMathCore.h"
+#include "Math/ProbFuncMathCore.h"
 #include "TFile.h"
 #include "TGraph.h"
 #include "TColor.h"
@@ -78,34 +81,48 @@ public:
   // Reminder
   // bool GetMinosError(unsigned int i, double &errLow, double &errUp, int=0);
   // bool Minimize();
-  // bool Scan (unsigned int i, unsigned int &nstep, double *x, double *y, double xmin=0, double xmax=0); 
-  // unsigned int NFree () const; 
-  // double Correlation (unsigned int i, unsigned int j)const; 
+  // bool Scan (unsigned int i, unsigned int &nstep, double *x, double *y, double xmin=0, double xmax=0);
+  // unsigned int NFree () const; double Correlation (unsigned int i, unsigned int j) const;
   // mini->PrintResults();
 
-  void CreateStandardContour(int CL, unsigned int Npoints, unsigned int parI, unsigned int parJ)
+  //Given the measured X² value for a set of experiments with a degree of freedom d, the probability of the result being due to chance.
+  //0.683 <- 2.2977, 0.955 <- 6.2021, 0.997 <- 11.6182, with n=2
+  //0.683 <- 1,      0.955 <- 4,      0.997 <- 9,       with n=1
+  //1 - P value = confidence level
+  static double ConfidenceLevel(double chi2, int n){
+    return ROOT::Math::chisquared_cdf(chi2,n);
+  }
+  void CreateContour(double confi_level, unsigned int Npoints, unsigned int parI, unsigned int parJ, double *array_I, double *array_J)
+  {
+    //To determine the chi-square value indicating a probability Q of non-chance occurrence for an experiment with d degrees of freedom
+    //0.683 -> 2.2977, 0.955 -> 6.2021, 0.997->11.6182, with n=2
+    //0.683 -> 1,      0.955 -> 4,      0.997->9,       with n=1
+    SetErrorDef(ROOT::Math::chisquared_quantile(confi_level,2));
+    ROOT::Minuit2::Minuit2Minimizer::Contour(parI, parJ, Npoints, array_I, array_J);
+  }
+  void CreateStandardContour(int nsigma, unsigned int Npoints, unsigned int parI, unsigned int parJ)
   {
 
     /// https://www.fourmilab.ch/rpkp/experiments/analysis/chiCalc.html
     // 68.3% confidence level // 1 - 0.317 with ndf = 2
     // 95.5% confidence level // 1 - 0.045 with ndf = 2
     // 99.7% confidence level // 1 - 0.003 with ndf = 2
-    double CL_level[3] = {2.2977, 6.2021, 11.6182};
-    switch (CL)
+    double chi2_quant[3] = {2.2977, 6.2021, 11.6182};
+    switch (nsigma)
     {
       case 1:
       case 2:
       case 3:
-        SetErrorDef(CL_level[CL - 1]);
+        SetErrorDef(chi2_quant[nsigma - 1]);
 
-        contourEdge_I[CL - 1] = new double[Npoints];
-        contourEdge_J[CL - 1] = new double[Npoints];
+        contourEdge_I[nsigma - 1] = new double[Npoints];
+        contourEdge_J[nsigma - 1] = new double[Npoints];
 
-        ROOT::Minuit2::Minuit2Minimizer::Contour(parI, parJ, Npoints, contourEdge_I[CL - 1], contourEdge_J[CL - 1]);
+        ROOT::Minuit2::Minuit2Minimizer::Contour(parI, parJ, Npoints, contourEdge_I[nsigma - 1], contourEdge_J[nsigma - 1]);
 
         break;
       default:
-        std::cout << "Invalid CL option" << std::endl;
+        std::cout << "Invalid nsigma option" << std::endl;
         return;
     }
   }
