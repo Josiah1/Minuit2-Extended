@@ -1,3 +1,11 @@
+/**
+ * @file TMinimization.h
+ * @brief  An easy-used minuit2 package.
+ * @author Jinjing Li, josiahleeoaa@outlook.com
+ * @version 1.0.0
+ * @date 2020-09-01
+ */
+
 #include "Minuit2/Minuit2Minimizer.h"
 #include "Math/Functor.h"
 

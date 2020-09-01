@@ -1,3 +1,10 @@
+/**
+ * @file exam.C
+ * @brief  An example to use the minuit2 package
+ * @author Jinjing Li, josiahleeoaa@outlook.com
+ * @version 1.0.0
+ * @date 2020-09-01
+ */
 #include "TMinimization.h"
 #include "TRandom3.h"
 #include "TMath.h"
