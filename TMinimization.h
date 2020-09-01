@@ -8,6 +8,9 @@
 
 #include "Minuit2/Minuit2Minimizer.h"
 #include "Math/Functor.h"
+#include "TFile.h"
+#include "TGraph.h"
+#include "TColor.h"
 
 class Fcn
 {
@@ -75,8 +78,9 @@ public:
   // Reminder
   // bool GetMinosError(unsigned int i, double &errLow, double &errUp, int=0);
   // bool Minimize();
-  // bool Scan (unsigned int i, unsigned int &nstep, double *x, double *y, double xmin=0, double
-  // xmax=0); unsigned int NFree () const; double Correlation (unsigned int i, unsigned int j) const;
+  // bool Scan (unsigned int i, unsigned int &nstep, double *x, double *y, double xmin=0, double xmax=0); 
+  // unsigned int NFree () const; 
+  // double Correlation (unsigned int i, unsigned int j)const; 
   // mini->PrintResults();
 
   void CreateStandardContour(int CL, unsigned int Npoints, unsigned int parI, unsigned int parJ)
@@ -104,6 +108,28 @@ public:
         std::cout << "Invalid CL option" << std::endl;
         return;
     }
+  }
+  void GetContourGraphs(const char* name, unsigned int Npoints)
+  {
+    TFile* oufile = new TFile(name, "RECREATE");
+    TGraph* contour_nsigma[3];
+    int colors[3] = {
+        TColor::GetColor("#ff9999"),
+        TColor::GetColor("#99ff99"),
+        TColor::GetColor("#9999ff"),
+    };
+    int color_nsigma[3] = {kRed, kBlue, kGreen + 1};
+
+    for (int i = 0; i < 3; i++)
+    {
+      contour_nsigma[i] = new TGraph(Npoints, contourEdge_I[i], contourEdge_J[i]);
+      contour_nsigma[i]->SetLineColor(colors[i]);
+      contour_nsigma[i]->SetLineWidth(2);
+      contour_nsigma[i]->SetMarkerColor(color_nsigma[i]);
+      contour_nsigma[i]->SetFillColor(colors[i]);
+      contour_nsigma[i]->Write(Form("contour_%dsigma", i + 1));
+    }
+    oufile->Close();
   }
 
 public:
