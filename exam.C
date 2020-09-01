@@ -24,7 +24,7 @@ double Function::operator()(const double* par)
   return -2 * res;
 }
 
-//g++ -o exam exam.C `root-config --cflags --libs` -lminuit2 -lminuit
+//g++ -o exam exam.C `root-config --cflags --libs` -lminuit2
 int main(void)
 {
 
@@ -42,15 +42,15 @@ int main(void)
   ROOT::Math::Functor Chi2Functor(fcn, 2);
   TMini* mini = new TMini(Chi2Functor);
 
-  mini->SetVariable(0, "mu", 0, 1e-8);
-  mini->SetVariable(1, "sigma", 1, 1e-8);
+  mini->SetParameter(0, "mu", 0, 1e-8);
+  mini->SetParameter(1, "sigma", 1, 1e-8);
 
   mini->Minimize();
 
-  const double* pars = mini->X();
-  const double* errs = mini->Errors();
+  const double* pars = mini->GetParameters();
+  const double* errs = mini->GetParErrors();
 
-  cout << Form("MinValue= %.2f", mini->MinValue()) << endl;
+  cout << Form("MinValue= %.2f", mini->GetFcn()) << endl;
 
   //Example of parameter scan
   unsigned int nstep = 100;
@@ -59,9 +59,8 @@ int main(void)
   mini->Scan(0, nstep, x, y, pars[0] - 3 * errs[0], pars[0] + 3 * errs[0]);
   for (int i = 0; i < 100; i++)
   {
-    cout << Form("%.2f %.2f", x[i], y[i] - mini->MinValue()) << endl;
+    cout << Form("%.2f %.2f", x[i], y[i] - mini->GetFcn()) << endl;
   }
-  //mini->PrintResults();
 
   return 0;
 }
