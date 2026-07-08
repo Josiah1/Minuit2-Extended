@@ -1014,11 +1014,22 @@ public:
     if (!output_filename.empty())
       ofile.open(output_filename);
 
+    // Save/restore the full parameter state around the scan (same pattern as
+    // ProfileLikelihood/GridScan). Without this, every parameter is left at
+    // the last grid point's re-fit values, contaminating whatever runs next
+    // (e.g. a second scan over another parameter).
+    auto snap = SaveState();
+    bool all_ok = true;
+
     for (unsigned int i = 0; i < nstep; i++) {
       double this_x = x0 + (x1 - x0) * i / (std::max(1u, nstep - 1));
       FixParameter(idx, this_x);
       this->SetValidError(false);
-      Fit(-1);
+      if (!Fit(-1) || this->Status() != 0) {
+        all_ok = false;
+        std::cerr << "[WARN] Scan_Chi2: re-fit at par" << idx << " = " << this_x
+                  << " did not converge cleanly (status=" << this->Status() << ")" << std::endl;
+      }
       array_x[i] = this->X()[idx];
       array_y[i] = this->MinValue();
       if (ofile.is_open()) {
@@ -1027,7 +1038,8 @@ public:
       }
     }
     this->ReleaseVariable(idx);
-    return true;
+    RestoreState(snap);
+    return all_ok;
   }
 
   // =========================================================================
