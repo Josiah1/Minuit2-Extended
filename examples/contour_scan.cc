@@ -22,10 +22,22 @@ int main() {
   ROOT::Math::Functor f(&parabolic_chi2, 2);
   mini.SetFunction(f);
   mini.Fit();
+  mini.Hesse();
+  const double up_before = mini.ErrorDef();
+  const double err_before = mini.Errors()[0];
 
   // 1, 2, 3-sigma contours
   for (size_t sigma = 1; sigma <= 3; ++sigma)
     mini.CreateStandardContour(sigma, 100, 0, 1);
+
+  // The contour levels must not leak into later fits and their error estimates.
+  mini.Fit();
+  mini.Hesse();
+  if (mini.ErrorDef() != up_before || std::abs(mini.Errors()[0] - err_before) > 1e-6 * err_before) {
+    std::cerr << "FAIL: error definition changed by contours (ErrorDef " << mini.ErrorDef()
+              << ", Hesse error " << mini.Errors()[0] << " vs " << err_before << ")" << std::endl;
+    return 1;
+  }
 
   mini.GetContourGraphs("contour_scan_output.root", 100);
 

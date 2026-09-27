@@ -34,6 +34,7 @@
 #include "Math/PdfFuncMathCore.h"
 #include "Math/ProbFuncMathCore.h"
 #include "Math/QuantFuncMathCore.h"
+#include "Minuit2/FCNBase.h"
 #include "Minuit2/Minuit2Minimizer.h"
 #include "Minuit2/MinimumState.h"
 #include "Minuit2/MnTraceObject.h"
@@ -750,6 +751,7 @@ public:
 
   std::pair<double, double> ConfidenceInterval(unsigned int par_idx, double delta_chi2 = 1.0) {
     double err_low = 0.0, err_high = 0.0;
+    ErrorDefGuard error_def_guard(*this);
     this->SetErrorDef(delta_chi2);
     this->GetMinosError(par_idx, err_low, err_high);
     return {err_low, err_high};
@@ -944,6 +946,7 @@ public:
 
   void CreateContour(double confi_level, unsigned Npoints, unsigned int parI, unsigned int parJ,
                      double* array_I, double* array_J) {
+    ErrorDefGuard error_def_guard(*this);
     this->SetErrorDef(ROOT::Math::chisquared_quantile(confi_level, 2));
     this->Contour(parI, parJ, Npoints, array_I, array_J);
   }
@@ -955,6 +958,7 @@ public:
       return false;
     }
     double chi2_quant[3] = {2.2977, 6.2021, 11.6182};
+    ErrorDefGuard error_def_guard(*this);
     this->SetErrorDef(chi2_quant[nsigma - 1]);
 
     contourEdge_I[nsigma - 1].assign(Npoints, 0.0);
@@ -971,6 +975,7 @@ public:
 
   void CreateSpecialContour(unsigned int Npoints, unsigned int parI, unsigned int parJ) {
     double chi2_90 = 4.6051;
+    ErrorDefGuard error_def_guard(*this);
     this->SetErrorDef(chi2_90);
 
     contourEdgeS_I.assign(Npoints, 0.0);
@@ -1141,6 +1146,30 @@ public:
   std::set<unsigned int> m_config_fixed_params;
 
 private:
+  // Restores the error definition on scope exit, so a contour or interval at
+  // another confidence level does not leak into later fits and MINOS. Both the
+  // options and the FCN are reset, because Minuit2 Hesse reads the FCN level.
+  // ROOT also writes the level into the current FunctionMinimum, which is
+  // private: Hesse on the minimum that existed during the contour keeps that
+  // level until the next minimization.
+  class ErrorDefGuard {
+  public:
+    explicit ErrorDefGuard(TMini& mini) : m_mini(mini), m_saved(mini.ErrorDef()) {}
+    ~ErrorDefGuard() {
+      m_mini.SetErrorDef(m_saved);
+      if constexpr (B == MinimizerBackend::Minuit2) {
+        if (auto* fcn = m_mini.GetFCN())
+          fcn->SetErrorDef(m_saved);
+      }
+    }
+    ErrorDefGuard(const ErrorDefGuard&) = delete;
+    ErrorDefGuard& operator=(const ErrorDefGuard&) = delete;
+
+  private:
+    TMini& m_mini;
+    double m_saved;
+  };
+
   void ApplyAlgorithm(Algorithm algo) {
     if constexpr (B == MinimizerBackend::Minuit2) {
       switch (algo) {
